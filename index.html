@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pendaftaran Santri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        .clickable-row { cursor: pointer; }
+        .clickable-row:hover { background-color: #f8fafc; }
+        .selected-row { background-color: #e0e7ff !important; border-left: 4px solid #4f46e5; }
+        .selected-row:hover { background-color: #e0e7ff !important; }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
+                <div class="loading-spinner w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                <span class="text-gray-700 font-medium">Memproses data...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-indigo-500">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-500 text-white p-3 rounded-lg">
+                        <i class="fas fa-graduation-cap text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Sistem Pendaftaran Santri</h1>
+                        <p class="text-gray-600">Manajemen Data Santri Pesantren</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div id="connectionStatus" class="flex items-center space-x-2 px-3 py-1 rounded-full text-sm">
+                        <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+                        <span class="text-gray-600">Checking...</span>
+                    </div>
+                    <button onclick="showPromoteModal()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+                        <i class="fas fa-level-up-alt mr-2"></i>Naik Kelas
+                    </button>
+                    <button onclick="showAddForm()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
+                        <i class="fas fa-plus mr-2"></i>Daftar Santri Baru
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="statsCards">
+            <div id="card1" class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p id="card1Title" class="text-blue-100 text-sm font-medium">Santri Laki-laki</p>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <p class="text-3xl font-bold" id="lakiLaki">0</p>
+                            <i class="fas fa-mars text-blue-200 text-lg"></i>
+                        </div>
+                    </div>
+                    <div id="card1Icon" class="bg-blue-400 bg-opacity-50 p-3 rounded-full">
+                        <i class="fas fa-male text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="card2" class="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p id="card2Title" class="text-pink-100 text-sm font-medium">Santri Perempuan</p>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <p class="text-3xl font-bold" id="perempuan">0</p>
+                            <i class="fas fa-venus text-pink-200 text-lg"></i>
+                        </div>
+                    </div>
+                    <div id="card2Icon" class="bg-pink-400 bg-opacity-50 p-3 rounded-full">
+                        <i class="fas fa-female text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="card3" class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p id="card3Title" class="text-green-100 text-sm font-medium">Total Santri Aktif</p>
+                        <p class="text-3xl font-bold" id="totalSantri">0</p>
+                    </div>
+                    <div id="card3Icon" class="bg-green-400 bg-opacity-50 p-3 rounded-full">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="card4" class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p id="card4Title" class="text-orange-100 text-sm font-medium">Santri Baru Tahun Ini</p>
+                        <div class="mt-2 space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-mars text-orange-200 text-sm"></i>
+                                <span class="text-sm">Laki-laki (<span id="santriBaruLaki" class="font-bold">0</span>)</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-venus text-orange-200 text-sm"></i>
+                                <span class="text-sm">Perempuan (<span id="santriBaruPerempuan" class="font-bold">0</span>)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="card4Icon" class="bg-orange-400 bg-opacity-50 p-3 rounded-full">
+                        <i class="fas fa-calendar-plus text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Search and Status Filter -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-8">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center space-x-4 flex-1">
+                    <div class="relative flex-1 max-w-md">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="globalSearch" placeholder="Cari santri (nama, alamat, kelas, kontak, dll...)" 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-700">Status:</span>
+                        <select id="filterStatus" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <option value="Aktif" selected>Aktif</option>
+                            <option value="Alumni">Alumni</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="syncWithGoogleSheets()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">
+                        <i class="fas fa-sync-alt mr-2"></i>Sync Data
+                    </button>
+                    <button onclick="resetFilters()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">
+                        <i class="fas fa-refresh mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800">Data Santri</h3>
+                <div class="relative">
+                    <button onclick="toggleColumnSettings()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <div id="columnSettings" class="hidden absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-64 z-10">
+                        <h4 class="font-semibold text-gray-800 mb-3">Tampilkan Kolom</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-id" checked class="mr-2 text-indigo-500">
+                                <span class="text-sm">ID Santri</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-nama" checked class="mr-2 text-indigo-500">
+                                <span class="text-sm">Nama</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-gender" checked class="mr-2 text-indigo-500">
+                                <span class="text-sm">Gender</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-tgl-lahir" checked class="mr-2 text-indigo-500">
+                                <span class="text-sm">Tanggal Lahir</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-alamat" class="mr-2 text-indigo-500">
+                                <span class="text-sm">Alamat</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-ortu" class="mr-2 text-indigo-500">
+                                <span class="text-sm">Nama Orang Tua</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-kontak" class="mr-2 text-indigo-500">
+                                <span class="text-sm">Kontak</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="col-kelas" checked class="mr-2 text-indigo-500">
+                                <span class="text-sm">Kelas</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr id="tableHeader">
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-id">ID Santri</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-nama">Nama</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-gender">Gender</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-tgl-lahir">Tanggal Lahir</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-alamat" style="display: none;">Alamat</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-ortu" style="display: none;">Nama Orang Tua</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-kontak" style="display: none;">Kontak</th>
+                            <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider col-kelas">Kelas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="santriTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="noDataMessage" class="hidden text-center py-12">
+                <i class="fas fa-users text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Belum ada data santri</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail Santri Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-800">Detail Data Santri</h3>
+                    <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="detailContent">
+                        <!-- Content will be populated here -->
+                    </div>
+                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                        <button onclick="editFromDetail()" 
+                                class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl">
+                            <i class="fas fa-edit mr-2"></i>Edit Data
+                        </button>
+                        <button onclick="deleteFromDetail()" 
+                                class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl">
+                            <i class="fas fa-trash mr-2"></i>Hapus Data
+                        </button>
+                        <button onclick="closeDetailModal()" 
+                                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="santriModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">Daftar Santri Baru</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="santriForm" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- ID Santri (Auto-generated) -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ID Santri</label>
+                            <input type="text" id="idSantri" readonly 
+                                   class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
+                        </div>
+
+                        <!-- Nama (Required) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Nama Lengkap <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="nama" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- Gender -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Kelamin</label>
+                            <select id="gender" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Laki-laki">Laki-laki</option>
+                                <option value="Perempuan">Perempuan</option>
+                            </select>
+                        </div>
+
+                        <!-- Tempat Lahir -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tempat Lahir</label>
+                            <input type="text" id="tempatLahir" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- Tanggal Lahir (Required) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Tanggal Lahir <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" id="tglLahir" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- Alamat (Required) -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Alamat Lengkap <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="alamat" required rows="3" 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <!-- Nama Ayah (Required) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Nama Ayah <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="namaAyah" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- Nama Ibu (Required) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Nama Ibu <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="namaIbu" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- No Kontak Santri -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">No. Kontak Santri</label>
+                            <input type="tel" id="noKontakSantri" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- No Kontak Ortu (Required) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                No. Kontak Orang Tua <span class="text-red-500">*</span>
+                            </label>
+                            <input type="tel" id="noKontakOrtu" required 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <!-- Kelas -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
+                            <select id="kelas" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Ibtida I">Ibtida I</option>
+                                <option value="Ibtida II">Ibtida II</option>
+                                <option value="Ibtida III">Ibtida III</option>
+                                <option value="Tsanawi I">Tsanawi I</option>
+                                <option value="Tsanawi II">Tsanawi II</option>
+                                <option value="Tsanawi III">Tsanawi III</option>
+                                <option value="Tahfidz">Tahfidz</option>
+                                <option value="Takhosus">Takhosus</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Anak -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Anak</label>
+                            <select id="statusAnak" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Lengkap">Lengkap</option>
+                                <option value="Tiri">Tiri</option>
+                                <option value="Yatim">Yatim</option>
+                                <option value="Piatu">Piatu</option>
+                                <option value="Yatim Piatu">Yatim Piatu</option>
+                                <option value="Asuh">Asuh</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Santri -->
+                        <div id="statusSantriDiv">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Santri</label>
+                            <select id="statusSantri" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Aktif">Aktif</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
+                        </div>
+
+                        <!-- Tanggal Keluar (only show when status is Alumni) -->
+                        <div id="tglKeluarDiv" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Keluar</label>
+                            <input type="date" id="tglKeluar" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeModal()" 
+                                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl">
+                            <i class="fas fa-save mr-2"></i>Simpan Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promote Class Modal -->
+    <div id="promoteModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-gray-800">Naik Kelas Massal</h3>
+                    <button onclick="closePromoteModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="mb-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <span class="text-blue-800 font-medium">Pilih kelas asal dan kelas tujuan untuk menaikkan santri secara massal</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Kelas Asal</label>
+                                <select id="kelasAsal" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Pilih Kelas Asal</option>
+                                    <option value="Ibtida I">Ibtida I</option>
+                                    <option value="Ibtida II">Ibtida II</option>
+                                    <option value="Ibtida III">Ibtida III</option>
+                                    <option value="Tsanawi I">Tsanawi I</option>
+                                    <option value="Tsanawi II">Tsanawi II</option>
+                                    <option value="Tsanawi III">Tsanawi III</option>
+                                    <option value="Tahfidz">Tahfidz</option>
+                                    <option value="Takhosus">Takhosus</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Kelas Tujuan</label>
+                                <select id="kelasTujuan" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Pilih Kelas Tujuan</option>
+                                    <option value="Ibtida I">Ibtida I</option>
+                                    <option value="Ibtida II">Ibtida II</option>
+                                    <option value="Ibtida III">Ibtida III</option>
+                                    <option value="Tsanawi I">Tsanawi I</option>
+                                    <option value="Tsanawi II">Tsanawi II</option>
+                                    <option value="Tsanawi III">Tsanawi III</option>
+                                    <option value="Tahfidz">Tahfidz</option>
+                                    <option value="Takhosus">Takhosus</option>
+                                    <option value="Alumni">Alumni (Lulus)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button onclick="previewPromotion()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                                <i class="fas fa-search mr-2"></i>Preview Santri
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="promotionPreview" class="hidden">
+                        <div class="border-t border-gray-200 pt-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-semibold text-gray-800">Santri yang akan naik kelas:</h4>
+                                <div class="flex items-center space-x-4">
+                                    <button onclick="selectAllPromotion()" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg transition-colors">
+                                        <i class="fas fa-check-square mr-1"></i>Pilih Semua
+                                    </button>
+                                    <button onclick="deselectAllPromotion()" class="text-sm bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg transition-colors">
+                                        <i class="fas fa-square mr-1"></i>Batal Semua
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                                <div id="promotionList" class="space-y-2">
+                                    <!-- Preview list will be populated here -->
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                                    <span class="text-yellow-800">
+                                        <span id="promotionCount">0</span> santri dipilih untuk dipindahkan. 
+                                        <span id="graduationNote" class="hidden">Santri yang naik ke Alumni akan otomatis mendapat tanggal keluar hari ini.</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                        <button onclick="closePromoteModal()" 
+                                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+                            Batal
+                        </button>
+                        <button id="executePromotionBtn" onclick="executePromotion()" disabled
+                                class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+                            <i class="fas fa-level-up-alt mr-2"></i>Naik Kelas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 hidden">
+        <button onclick="viewDetails()" class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+            <i class="fas fa-eye mr-2"></i>Lihat Detail
+        </button>
+        <button onclick="editFromContext()" class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700">
+            <i class="fas fa-edit mr-2"></i>Edit Data
+        </button>
+        <hr class="my-1">
+        <button onclick="deleteFromContext()" class="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-red-600">
+            <i class="fas fa-trash mr-2"></i>Hapus Data
+        </button>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                <div class="p-6 text-center">
+                    <div class="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Konfirmasi Hapus</h3>
+                    <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus data santri ini? Tindakan ini tidak dapat dibatalkan.</p>
+                    <div class="flex justify-center space-x-4">
+                        <button onclick="closeDeleteModal()" 
+                                class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+                            Batal
+                        </button>
+                        <button onclick="confirmDelete()" 
+                                class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors">
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script Configuration
+        const GAPPS_CONFIG = {
+            // Ganti dengan URL Google Apps Script Web App Anda
+            WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzEbuC9a70TwoQ5WeyhtEx0Q5oMKcYDZffLm9Z5MSyHei7urjn0O3c4CBpa-osT4AjA/exec',
+            
+            // Nama sheet di Google Spreadsheet
+            SHEET_NAME: 'DataSantri',
+            
+            // Timeout untuk request (dalam milidetik)
+            TIMEOUT: 30000
+        };
+
+        // Global variables
+        let santriData = [];
+        let isLoading = false;
+        let currentEditId = null;
+        let deleteId = null;
+        let currentDetailId = null;
+        let selectedRowId = null;
+        let isGoogleSheetsConnected = false;
+
+        // Google Apps Script API Functions
+        async function callGoogleAppsScript(action, data = {}) {
+            if (GAPPS_CONFIG.WEB_APP_URL.includes('https://script.google.com/macros/s/AKfycbzEbuC9a70TwoQ5WeyhtEx0Q5oMKcYDZffLm9Z5MSyHei7urjn0O3c4CBpa-osT4AjA/exec')) {
+                console.warn('Google Apps Script URL belum dikonfigurasi. Menggunakan data lokal.');
+                updateConnectionStatus(false, 'URL belum dikonfigurasi');
+                return null;
+            }
+
+            try {
+                showLoadingIndicator(true);
+                
+                const payload = {
+                    action: action,
+                    sheetName: GAPPS_CONFIG.SHEET_NAME,
+                    data: data
+                };
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), GAPPS_CONFIG.TIMEOUT);
+
+                const response = await fetch(GAPPS_CONFIG.WEB_APP_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                    mode: 'cors',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                updateConnectionStatus(true, 'Terhubung');
+                return result;
+            } catch (error) {
+                console.error('Error calling Google Apps Script:', error);
+                updateConnectionStatus(false, error.name === 'AbortError' ? 'Timeout' : 'Error koneksi');
+                showNotification(`Error: ${error.message}`, 'error');
+                return null;
+            } finally {
+                showLoadingIndicator(false);
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected, message) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const dot = statusDiv.querySelector('div');
+            const text = statusDiv.querySelector('span');
+            
+            isGoogleSheetsConnected = connected;
+            
+            if (connected) {
+                dot.className = 'w-2 h-2 rounded-full bg-green-500';
+                text.textContent = message || 'Terhubung';
+                text.className = 'text-green-600';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500';
+                text.textContent = message || 'Terputus';
+                text.className = 'text-red-600';
+            }
+        }
+
+        // Load data from Google Sheets
+        async function loadDataFromGoogleSheets() {
+            const result = await callGoogleAppsScript('getData');
+            if (result && result.data) {
+                santriData = result.data;
+                return true;
+            }
+            return false;
+        }
+
+        // Save data to Google Sheets
+        async function saveDataToGoogleSheets(data) {
+            const result = await callGoogleAppsScript('addData', data);
+            return result && result.success;
+        }
+
+        // Update data in Google Sheets
+        async function updateDataInGoogleSheets(data) {
+            const result = await callGoogleAppsScript('updateData', data);
+            return result && result.success;
+        }
+
+        // Delete data from Google Sheets
+        async function deleteDataFromGoogleSheets(id) {
+            const result = await callGoogleAppsScript('deleteData', { id_santri: id });
+            return result && result.success;
+        }
+
+        // Bulk update for class promotion
+        async function bulkUpdateGoogleSheets(updates) {
+            const result = await callGoogleAppsScript('bulkUpdate', { updates: updates });
+            return result && result.success;
+        }
+
+        // Sync data with Google Sheets
+        async function syncWithGoogleSheets() {
+            showNotification('Memulai sinkronisasi data...', 'info');
+            const success = await loadDataFromGoogleSheets();
+            
+            if (success) {
+                loadSantriData();
+                updateStats();
+                filterData();
+                showNotification('Data berhasil disinkronkan dengan Google Sheets', 'success');
+            } else {
+                showNotification('Gagal sinkronisasi. Menggunakan data lokal.', 'error');
+            }
+        }
+
+        // Show/hide loading indicator
+        function showLoadingIndicator(show) {
+            isLoading = show;
+            const loadingDiv = document.getElementById('loadingIndicator');
+            if (loadingDiv) {
+                loadingDiv.style.display = show ? 'flex' : 'none';
+            }
+        }
+
+        // Sample data (fallback when Google Sheets is not configured)
+        const sampleData = [
+            {
+                id_santri: "202307017",
+                nama: "Abdul Aziz Muslim",
+                gender: "Laki-laki",
+                tempat_lahir: "Ciamis",
+                tgl_lahir: "2010-02-16",
+                alamat: "Cileungsing, Lumbung Sari, Lumbung, Ciamis",
+                nama_ayah: "Ahmad Muslim",
+                nama_ibu: "Siti Khadijah",
+                no_kontak_santri: "081234567890",
+                no_kontak_ortu: "081987654321",
+                kelas: "Ibtida I",
+                status_anak: "Lengkap",
+                status_santri: "Aktif",
+                tgl_daftar: "2023-07-15",
+                tgl_keluar: "-"
+            },
+            {
+                id_santri: "201907068",
+                nama: "Abdul Rohman",
+                gender: "Laki-laki",
+                tempat_lahir: "Tasikmalaya",
+                tgl_lahir: "2009-03-22",
+                alamat: "Jl. Merdeka No. 123, Tasikmalaya",
+                nama_ayah: "Usman Rohman",
+                nama_ibu: "Fatimah",
+                no_kontak_santri: "082345678901",
+                no_kontak_ortu: "082876543210",
+                kelas: "Ibtida II",
+                status_anak: "Lengkap",
+                status_santri: "Aktif",
+                tgl_daftar: "2019-07-10",
+                tgl_keluar: "-"
+            },
+            {
+                id_santri: "202401001",
+                nama: "Siti Aisyah",
+                gender: "Perempuan",
+                tempat_lahir: "Bandung",
+                tgl_lahir: "2011-05-18",
+                alamat: "Jl. Sudirman No. 45, Bandung",
+                nama_ayah: "Muhammad Yusuf",
+                nama_ibu: "Khadijah Aisyah",
+                no_kontak_santri: "083456789012",
+                no_kontak_ortu: "083765432109",
+                kelas: "Ibtida I",
+                status_anak: "Lengkap",
+                status_santri: "Aktif",
+                tgl_daftar: "2024-01-15",
+                tgl_keluar: "-"
+            },
+            {
+                id_santri: "201806025",
+                nama: "Ahmad Fauzi",
+                gender: "Laki-laki",
+                tempat_lahir: "Jakarta",
+                tgl_lahir: "2008-08-10",
+                alamat: "Jl. Kebon Jeruk No. 88, Jakarta",
+                nama_ayah: "Fauzi Rahman",
+                nama_ibu: "Aminah",
+                no_kontak_santri: "084567890123",
+                no_kontak_ortu: "084654321098",
+                kelas: "Tsanawi III",
+                status_anak: "Lengkap",
+                status_santri: "Alumni",
+                tgl_daftar: "2018-06-20",
+                tgl_keluar: "2024-06-15"
+            }
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Set default filter to Aktif
+            document.getElementById('filterStatus').value = 'Aktif';
+            
+            // Try to load from Google Sheets first
+            const loaded = await loadDataFromGoogleSheets();
+            
+            if (!loaded) {
+                // Fallback to sample data
+                santriData = [...sampleData];
+                updateConnectionStatus(false, 'Menggunakan data lokal');
+            }
+            
+            loadSantriData();
+            updateStats();
+            setupEventListeners();
+            // Apply initial filter
+            filterData();
+        });
+
+        function setupEventListeners() {
+            // Global search functionality
+            document.getElementById('globalSearch').addEventListener('input', filterData);
+            document.getElementById('filterStatus').addEventListener('change', function() {
+                filterData();
+                updateStats();
+                updateCardStyles();
+            });
+
+            // Form submission
+            document.getElementById('santriForm').addEventListener('submit', handleFormSubmit);
+
+            // Status santri change handler
+            document.getElementById('statusSantri').addEventListener('change', function() {
+                const tglKeluarDiv = document.getElementById('tglKeluarDiv');
+                if (this.value === 'Alumni') {
+                    tglKeluarDiv.classList.remove('hidden');
+                    document.getElementById('tglKeluar').required = true;
+                } else {
+                    tglKeluarDiv.classList.add('hidden');
+                    document.getElementById('tglKeluar').required = false;
+                    document.getElementById('tglKeluar').value = '';
+                }
+            });
+
+            // Column visibility toggles
+            const columnCheckboxes = ['col-id', 'col-nama', 'col-gender', 'col-tgl-lahir', 'col-alamat', 'col-ortu', 'col-kontak', 'col-kelas'];
+            columnCheckboxes.forEach(colId => {
+                document.getElementById(colId).addEventListener('change', toggleColumn);
+            });
+
+            // Close column settings when clicking outside
+            document.addEventListener('click', function(e) {
+                const columnSettings = document.getElementById('columnSettings');
+                const settingsButton = e.target.closest('button[onclick="toggleColumnSettings()"]');
+                if (!columnSettings.contains(e.target) && !settingsButton) {
+                    columnSettings.classList.add('hidden');
+                }
+                
+                // Close context menu when clicking outside
+                const contextMenu = document.getElementById('contextMenu');
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.classList.add('hidden');
+                }
+            });
+            
+            // Prevent default context menu
+            document.addEventListener('contextmenu', function(e) {
+                if (e.target.closest('.clickable-row')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        function updateCardStyles() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const card1 = document.getElementById('card1');
+            const card2 = document.getElementById('card2');
+            const card3 = document.getElementById('card3');
+            const card4 = document.getElementById('card4');
+
+            if (statusFilter === 'Alumni') {
+                // Change to purple theme for alumni
+                card1.className = 'bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white';
+                card1.querySelector('#card1Title').className = 'text-purple-100 text-sm font-medium';
+                card1.querySelector('.fa-mars').className = 'fas fa-mars text-purple-200 text-lg';
+                card1.querySelector('#card1Icon').className = 'bg-purple-400 bg-opacity-50 p-3 rounded-full';
+
+                card2.className = 'bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white';
+                card2.querySelector('#card2Title').className = 'text-indigo-100 text-sm font-medium';
+                card2.querySelector('.fa-venus').className = 'fas fa-venus text-indigo-200 text-lg';
+                card2.querySelector('#card2Icon').className = 'bg-indigo-400 bg-opacity-50 p-3 rounded-full';
+
+                card3.className = 'bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl shadow-lg p-6 text-white';
+                card3.querySelector('#card3Title').className = 'text-violet-100 text-sm font-medium';
+                card3.querySelector('#card3Icon').className = 'bg-violet-400 bg-opacity-50 p-3 rounded-full';
+
+                card4.className = 'bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg p-6 text-white';
+                card4.querySelector('#card4Title').className = 'text-teal-100 text-sm font-medium';
+                card4.querySelectorAll('.fa-mars, .fa-venus').forEach(icon => {
+                    icon.className = icon.className.replace('text-orange-200', 'text-teal-200');
+                });
+                card4.querySelector('#card4Icon').className = 'bg-teal-400 bg-opacity-50 p-3 rounded-full';
+            } else {
+                // Reset to original colors for active
+                card1.className = 'bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white';
+                card1.querySelector('#card1Title').className = 'text-blue-100 text-sm font-medium';
+                card1.querySelector('.fa-mars').className = 'fas fa-mars text-blue-200 text-lg';
+                card1.querySelector('#card1Icon').className = 'bg-blue-400 bg-opacity-50 p-3 rounded-full';
+
+                card2.className = 'bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl shadow-lg p-6 text-white';
+                card2.querySelector('#card2Title').className = 'text-pink-100 text-sm font-medium';
+                card2.querySelector('.fa-venus').className = 'fas fa-venus text-pink-200 text-lg';
+                card2.querySelector('#card2Icon').className = 'bg-pink-400 bg-opacity-50 p-3 rounded-full';
+
+                card3.className = 'bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white';
+                card3.querySelector('#card3Title').className = 'text-green-100 text-sm font-medium';
+                card3.querySelector('#card3Icon').className = 'bg-green-400 bg-opacity-50 p-3 rounded-full';
+
+                card4.className = 'bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white';
+                card4.querySelector('#card4Title').className = 'text-orange-100 text-sm font-medium';
+                card4.querySelectorAll('.fa-mars, .fa-venus').forEach(icon => {
+                    icon.className = icon.className.replace('text-teal-200', 'text-orange-200');
+                });
+                card4.querySelector('#card4Icon').className = 'bg-orange-400 bg-opacity-50 p-3 rounded-full';
+            }
+        }
+
+        function generateNewId() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            
+            // Find highest existing ID for current year-month
+            const prefix = year + month;
+            let maxNum = 0;
+            
+            santriData.forEach(santri => {
+                if (santri.id_santri.startsWith(prefix)) {
+                    const num = parseInt(santri.id_santri.slice(-3));
+                    if (num > maxNum) maxNum = num;
+                }
+            });
+            
+            const newNum = String(maxNum + 1).padStart(3, '0');
+            return prefix + newNum;
+        }
+
+        function showAddForm() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = 'Daftar Santri Baru';
+            document.getElementById('santriForm').reset();
+            document.getElementById('idSantri').value = generateNewId();
+            document.getElementById('tglKeluarDiv').classList.add('hidden');
+            
+            // For new students, hide status dropdown and set to Aktif
+            document.getElementById('statusSantriDiv').style.display = 'none';
+            document.getElementById('statusSantri').value = 'Aktif';
+            
+            document.getElementById('santriModal').classList.remove('hidden');
+            document.getElementById('santriModal').classList.add('fade-in');
+        }
+
+        function showSantriDetail(id) {
+            const santri = santriData.find(s => s.id_santri === id);
+            if (!santri) return;
+
+            currentDetailId = id;
+            const detailContent = document.getElementById('detailContent');
+            
+            detailContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-indigo-800 mb-2">Informasi Dasar</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">ID Santri:</span>
+                                <span class="font-medium">${santri.id_santri}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Nama Lengkap:</span>
+                                <span class="font-medium">${santri.nama}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Jenis Kelamin:</span>
+                                <span class="font-medium">
+                                    <i class="fas ${santri.gender === 'Laki-laki' ? 'fa-mars text-blue-500' : 'fa-venus text-pink-500'} mr-1"></i>
+                                    ${santri.gender}
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tempat, Tanggal Lahir:</span>
+                                <span class="font-medium">${santri.tempat_lahir === '-' ? '-' : santri.tempat_lahir}, ${santri.tgl_lahir === '-' ? '-' : formatDate(santri.tgl_lahir)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-800 mb-2">Alamat</h4>
+                        <p class="text-gray-700">${santri.alamat === '-' ? '-' : santri.alamat}</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 mb-2">Informasi Orang Tua</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Nama Ayah:</span>
+                                <span class="font-medium">${santri.nama_ayah === '-' ? '-' : santri.nama_ayah}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Nama Ibu:</span>
+                                <span class="font-medium">${santri.nama_ibu === '-' ? '-' : santri.nama_ibu}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status Anak:</span>
+                                <span class="font-medium">${santri.status_anak}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-purple-800 mb-2">Kontak</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">No. Kontak Santri:</span>
+                                <span class="font-medium">${santri.no_kontak_santri === '-' ? '-' : santri.no_kontak_santri}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">No. Kontak Orang Tua:</span>
+                                <span class="font-medium">${santri.no_kontak_ortu === '-' ? '-' : santri.no_kontak_ortu}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-orange-800 mb-2">Informasi Akademik</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Kelas:</span>
+                                <span class="font-medium">${santri.kelas}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status Santri:</span>
+                                <span class="font-medium">
+                                    <span class="px-2 py-1 rounded-full text-xs ${santri.status_santri === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}">
+                                        ${santri.status_santri}
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tanggal Daftar:</span>
+                                <span class="font-medium">${santri.tgl_daftar === '-' ? '-' : formatDate(santri.tgl_daftar)}</span>
+                            </div>
+                            ${santri.status_santri === 'Alumni' && santri.tgl_keluar !== '-' ? `
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tanggal Keluar:</span>
+                                <span class="font-medium">${formatDate(santri.tgl_keluar)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('fade-in');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            currentDetailId = null;
+        }
+
+        function editFromDetail() {
+            if (currentDetailId) {
+                editSantri(currentDetailId);
+                closeDetailModal();
+            }
+        }
+
+        function deleteFromDetail() {
+            if (currentDetailId) {
+                closeDetailModal();
+                deleteSantri(currentDetailId);
+            }
+        }
+
+        function editSantri(id) {
+            const santri = santriData.find(s => s.id_santri === id);
+            if (!santri) return;
+
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Data Santri';
+            
+            // For edit mode, show status dropdown
+            document.getElementById('statusSantriDiv').style.display = 'block';
+            
+            // Populate form
+            document.getElementById('idSantri').value = santri.id_santri;
+            document.getElementById('nama').value = santri.nama;
+            document.getElementById('gender').value = santri.gender;
+            document.getElementById('tempatLahir').value = santri.tempat_lahir === '-' ? '' : santri.tempat_lahir;
+            document.getElementById('tglLahir').value = santri.tgl_lahir === '-' ? '' : santri.tgl_lahir;
+            document.getElementById('alamat').value = santri.alamat === '-' ? '' : santri.alamat;
+            document.getElementById('namaAyah').value = santri.nama_ayah === '-' ? '' : santri.nama_ayah;
+            document.getElementById('namaIbu').value = santri.nama_ibu === '-' ? '' : santri.nama_ibu;
+            document.getElementById('noKontakSantri').value = santri.no_kontak_santri === '-' ? '' : santri.no_kontak_santri;
+            document.getElementById('noKontakOrtu').value = santri.no_kontak_ortu === '-' ? '' : santri.no_kontak_ortu;
+            document.getElementById('kelas').value = santri.kelas;
+            document.getElementById('statusAnak').value = santri.status_anak;
+            document.getElementById('statusSantri').value = santri.status_santri;
+            document.getElementById('tglKeluar').value = santri.tgl_keluar === '-' ? '' : santri.tgl_keluar;
+
+            // Show/hide tanggal keluar based on status
+            const tglKeluarDiv = document.getElementById('tglKeluarDiv');
+            if (santri.status_santri === 'Alumni') {
+                tglKeluarDiv.classList.remove('hidden');
+                document.getElementById('tglKeluar').required = true;
+            } else {
+                tglKeluarDiv.classList.add('hidden');
+                document.getElementById('tglKeluar').required = false;
+            }
+
+            document.getElementById('santriModal').classList.remove('hidden');
+            document.getElementById('santriModal').classList.add('fade-in');
+        }
+
+        function deleteSantri(id) {
+            deleteId = id;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        async function confirmDelete() {
+            if (deleteId) {
+                // Try to delete from Google Sheets first
+                if (isGoogleSheetsConnected) {
+                    const success = await deleteDataFromGoogleSheets(deleteId);
+                    if (!success) {
+                        showNotification('Gagal menghapus dari Google Sheets, tetapi data lokal akan dihapus', 'warning');
+                    }
+                }
+
+                // Delete from local data
+                santriData = santriData.filter(s => s.id_santri !== deleteId);
+                loadSantriData();
+                updateStats();
+                filterData();
+                closeDeleteModal();
+                showNotification('Data santri berhasil dihapus', 'success');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('santriModal').classList.add('hidden');
+            currentEditId = null;
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            deleteId = null;
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id_santri: document.getElementById('idSantri').value,
+                nama: document.getElementById('nama').value,
+                gender: document.getElementById('gender').value,
+                tempat_lahir: document.getElementById('tempatLahir').value || '-',
+                tgl_lahir: document.getElementById('tglLahir').value || '-',
+                alamat: document.getElementById('alamat').value,
+                nama_ayah: document.getElementById('namaAyah').value,
+                nama_ibu: document.getElementById('namaIbu').value,
+                no_kontak_santri: document.getElementById('noKontakSantri').value || '-',
+                no_kontak_ortu: document.getElementById('noKontakOrtu').value,
+                kelas: document.getElementById('kelas').value,
+                status_anak: document.getElementById('statusAnak').value,
+                status_santri: document.getElementById('statusSantri').value,
+                tgl_daftar: currentEditId ? santriData.find(s => s.id_santri === currentEditId).tgl_daftar : new Date().toISOString().split('T')[0],
+                tgl_keluar: document.getElementById('tglKeluar').value || '-'
+            };
+
+            let googleSheetsSuccess = true;
+
+            if (currentEditId) {
+                // Update existing
+                if (isGoogleSheetsConnected) {
+                    googleSheetsSuccess = await updateDataInGoogleSheets(formData);
+                }
+
+                const index = santriData.findIndex(s => s.id_santri === currentEditId);
+                if (index !== -1) {
+                    santriData[index] = formData;
+                    showNotification(googleSheetsSuccess ? 'Data santri berhasil diperbarui' : 'Data lokal diperbarui (Google Sheets gagal)', googleSheetsSuccess ? 'success' : 'warning');
+                }
+            } else {
+                // Add new
+                if (isGoogleSheetsConnected) {
+                    googleSheetsSuccess = await saveDataToGoogleSheets(formData);
+                }
+
+                santriData.unshift(formData);
+                showNotification(googleSheetsSuccess ? 'Santri baru berhasil didaftarkan' : 'Data lokal tersimpan (Google Sheets gagal)', googleSheetsSuccess ? 'success' : 'warning');
+            }
+
+            loadSantriData();
+            updateStats();
+            filterData();
+            closeModal();
+        }
+
+        function loadSantriData() {
+            const tbody = document.getElementById('santriTableBody');
+            const noDataMessage = document.getElementById('noDataMessage');
+            
+            if (santriData.length === 0) {
+                tbody.innerHTML = '';
+                noDataMessage.classList.remove('hidden');
+                return;
+            }
+
+            noDataMessage.classList.add('hidden');
+            
+            // Sort data by registration date (newest first)
+            const sortedData = [...santriData].sort((a, b) => {
+                const dateA = new Date(a.tgl_daftar || '1900-01-01');
+                const dateB = new Date(b.tgl_daftar || '1900-01-01');
+                return dateB - dateA;
+            });
+            
+            tbody.innerHTML = sortedData.map(santri => `
+                <tr class="hover:bg-gray-50 transition-colors clickable-row" onclick="showSantriDetail('${santri.id_santri}')" oncontextmenu="showContextMenu(event, '${santri.id_santri}')">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 col-id">${santri.id_santri}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-nama">${santri.nama}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-gender">
+                        <div class="flex items-center">
+                            <i class="fas ${santri.gender === 'Laki-laki' ? 'fa-mars text-blue-500' : 'fa-venus text-pink-500'} mr-2"></i>
+                            ${santri.gender}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-tgl-lahir">${santri.tgl_lahir === '-' ? '-' : formatDate(santri.tgl_lahir)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-alamat" style="display: none;">${santri.alamat}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-ortu" style="display: none;">${santri.nama_ayah} / ${santri.nama_ibu}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-kontak" style="display: none;">${santri.no_kontak_ortu}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-kelas">${santri.kelas}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterData() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const globalSearch = document.getElementById('globalSearch').value.toLowerCase();
+
+            const filteredData = santriData.filter(santri => {
+                const matchStatus = !statusFilter || santri.status_santri === statusFilter;
+                
+                // Global search - search in all fields
+                const searchableText = [
+                    santri.id_santri,
+                    santri.nama,
+                    santri.gender,
+                    santri.tempat_lahir,
+                    santri.tgl_lahir,
+                    santri.alamat,
+                    santri.nama_ayah,
+                    santri.nama_ibu,
+                    santri.no_kontak_santri,
+                    santri.no_kontak_ortu,
+                    santri.kelas,
+                    santri.status_anak,
+                    santri.status_santri
+                ].join(' ').toLowerCase();
+                
+                const matchSearch = !globalSearch || searchableText.includes(globalSearch);
+                
+                return matchStatus && matchSearch;
+            });
+
+            // Sort filtered data by registration date (newest first)
+            const sortedFilteredData = filteredData.sort((a, b) => {
+                const dateA = new Date(a.tgl_daftar || '1900-01-01');
+                const dateB = new Date(b.tgl_daftar || '1900-01-01');
+                return dateB - dateA;
+            });
+
+            // Update table with filtered data
+            const tbody = document.getElementById('santriTableBody');
+            const noDataMessage = document.getElementById('noDataMessage');
+            
+            if (sortedFilteredData.length === 0) {
+                tbody.innerHTML = '';
+                noDataMessage.classList.remove('hidden');
+                return;
+            }
+
+            noDataMessage.classList.add('hidden');
+            
+            tbody.innerHTML = sortedFilteredData.map(santri => `
+                <tr class="hover:bg-gray-50 transition-colors clickable-row" onclick="showSantriDetail('${santri.id_santri}')" oncontextmenu="showContextMenu(event, '${santri.id_santri}')">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 col-id">${santri.id_santri}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-nama">${santri.nama}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-gender">
+                        <div class="flex items-center">
+                            <i class="fas ${santri.gender === 'Laki-laki' ? 'fa-mars text-blue-500' : 'fa-venus text-pink-500'} mr-2"></i>
+                            ${santri.gender}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-tgl-lahir">${santri.tgl_lahir === '-' ? '-' : formatDate(santri.tgl_lahir)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-alamat" style="display: none;">${santri.alamat}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-ortu" style="display: none;">${santri.nama_ayah} / ${santri.nama_ibu}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-kontak" style="display: none;">${santri.no_kontak_ortu}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 col-kelas">${santri.kelas}</td>
+                </tr>
+            `).join('');
+        }
+
+        function resetFilters() {
+            document.getElementById('filterStatus').value = 'Aktif';
+            document.getElementById('globalSearch').value = '';
+            filterData();
+            updateStats();
+            updateCardStyles();
+        }
+
+        function toggleColumnSettings() {
+            const columnSettings = document.getElementById('columnSettings');
+            columnSettings.classList.toggle('hidden');
+        }
+
+        function toggleColumn() {
+            const columnId = this.id;
+            const columnClass = columnId;
+            const isChecked = this.checked;
+            
+            // Toggle header visibility
+            const headerCells = document.querySelectorAll(`th.${columnClass}`);
+            headerCells.forEach(cell => {
+                cell.style.display = isChecked ? '' : 'none';
+            });
+            
+            // Toggle body cells visibility
+            const bodyCells = document.querySelectorAll(`td.${columnClass}`);
+            bodyCells.forEach(cell => {
+                cell.style.display = isChecked ? '' : 'none';
+            });
+        }
+
+        function updateStats() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            // Filter data based on current status filter
+            const filteredData = santriData.filter(s => s.status_santri === statusFilter);
+            
+            const total = filteredData.length;
+            const lakiLaki = filteredData.filter(s => s.gender === 'Laki-laki').length;
+            const perempuan = filteredData.filter(s => s.gender === 'Perempuan').length;
+            
+            const currentYear = new Date().getFullYear();
+            
+            // Update card titles and data based on current filter
+            let card1Title, card2Title, card3Title, card4Title;
+            let santriBaruLaki, santriBaruPerempuan;
+            
+            if (statusFilter === 'Alumni') {
+                card1Title = 'Alumni Laki-laki';
+                card2Title = 'Alumni Perempuan';
+                card3Title = 'Total Alumni';
+                card4Title = 'Alumni Tahun Ini';
+                
+                const alumniThisYear = santriData.filter(s => 
+                    s.status_santri === 'Alumni' && 
+                    s.tgl_keluar && 
+                    s.tgl_keluar !== '-' &&
+                    new Date(s.tgl_keluar).getFullYear() === currentYear
+                );
+                santriBaruLaki = alumniThisYear.filter(s => s.gender === 'Laki-laki').length;
+                santriBaruPerempuan = alumniThisYear.filter(s => s.gender === 'Perempuan').length;
+            } else {
+                card1Title = 'Santri Laki-laki';
+                card2Title = 'Santri Perempuan';
+                card3Title = 'Total Santri Aktif';
+                card4Title = 'Santri Baru Tahun Ini';
+                
+                const santriBaruThisYear = santriData.filter(s => 
+                    s.tgl_daftar && 
+                    s.tgl_daftar !== '-' &&
+                    new Date(s.tgl_daftar).getFullYear() === currentYear
+                );
+                santriBaruLaki = santriBaruThisYear.filter(s => s.gender === 'Laki-laki').length;
+                santriBaruPerempuan = santriBaruThisYear.filter(s => s.gender === 'Perempuan').length;
+            }
+
+            // Update card titles
+            document.getElementById('card1Title').textContent = card1Title;
+            document.getElementById('card2Title').textContent = card2Title;
+            document.getElementById('card3Title').textContent = card3Title;
+            document.getElementById('card4Title').textContent = card4Title;
+
+            // Update numbers
+            document.getElementById('totalSantri').textContent = total;
+            document.getElementById('lakiLaki').textContent = lakiLaki;
+            document.getElementById('perempuan').textContent = perempuan;
+            document.getElementById('santriBaruLaki').textContent = santriBaruLaki;
+            document.getElementById('santriBaruPerempuan').textContent = santriBaruPerempuan;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString || dateString === '-') return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function showPromoteModal() {
+            document.getElementById('promoteModal').classList.remove('hidden');
+            document.getElementById('promoteModal').classList.add('fade-in');
+            // Reset form
+            document.getElementById('kelasAsal').value = '';
+            document.getElementById('kelasTujuan').value = '';
+            document.getElementById('promotionPreview').classList.add('hidden');
+            document.getElementById('executePromotionBtn').disabled = true;
+        }
+
+        function closePromoteModal() {
+            document.getElementById('promoteModal').classList.add('hidden');
+        }
+
+        function previewPromotion() {
+            const kelasAsal = document.getElementById('kelasAsal').value;
+            const kelasTujuan = document.getElementById('kelasTujuan').value;
+
+            if (!kelasAsal || !kelasTujuan) {
+                showNotification('Pilih kelas asal dan kelas tujuan terlebih dahulu', 'error');
+                return;
+            }
+
+            if (kelasAsal === kelasTujuan) {
+                showNotification('Kelas asal dan tujuan tidak boleh sama', 'error');
+                return;
+            }
+
+            // Find santri in the source class (only active students)
+            const santriToPromote = santriData.filter(santri => 
+                santri.kelas === kelasAsal && santri.status_santri === 'Aktif'
+            );
+
+            if (santriToPromote.length === 0) {
+                showNotification(`Tidak ada santri aktif di kelas ${kelasAsal}`, 'error');
+                return;
+            }
+
+            // Show preview with checkboxes
+            const promotionList = document.getElementById('promotionList');
+            const promotionCount = document.getElementById('promotionCount');
+            const graduationNote = document.getElementById('graduationNote');
+            const executeBtn = document.getElementById('executePromotionBtn');
+
+            promotionList.innerHTML = santriToPromote.map(santri => `
+                <div class="flex items-center justify-between bg-white p-3 rounded-lg border">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" id="promote_${santri.id_santri}" checked 
+                               class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
+                               onchange="updatePromotionCount()">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <i class="fas ${santri.gender === 'Laki-laki' ? 'fa-mars text-blue-500' : 'fa-venus text-pink-500'} text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900">${santri.nama}</p>
+                            <p class="text-sm text-gray-500">${santri.id_santri}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-900">${kelasAsal} → ${kelasTujuan}</p>
+                        ${kelasTujuan === 'Alumni' ? '<p class="text-xs text-purple-600">Akan lulus</p>' : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            promotionCount.textContent = santriToPromote.length;
+            
+            if (kelasTujuan === 'Alumni') {
+                graduationNote.classList.remove('hidden');
+            } else {
+                graduationNote.classList.add('hidden');
+            }
+
+            document.getElementById('promotionPreview').classList.remove('hidden');
+            executeBtn.disabled = false;
+        }
+
+        function selectAllPromotion() {
+            const checkboxes = document.querySelectorAll('#promotionList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updatePromotionCount();
+        }
+
+        function deselectAllPromotion() {
+            const checkboxes = document.querySelectorAll('#promotionList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updatePromotionCount();
+        }
+
+        function updatePromotionCount() {
+            const checkedBoxes = document.querySelectorAll('#promotionList input[type="checkbox"]:checked');
+            const promotionCount = document.getElementById('promotionCount');
+            const executeBtn = document.getElementById('executePromotionBtn');
+            
+            promotionCount.textContent = checkedBoxes.length;
+            executeBtn.disabled = checkedBoxes.length === 0;
+        }
+
+        async function executePromotion() {
+            const kelasAsal = document.getElementById('kelasAsal').value;
+            const kelasTujuan = document.getElementById('kelasTujuan').value;
+
+            if (!kelasAsal || !kelasTujuan) return;
+
+            // Get selected santri from checkboxes
+            const checkedBoxes = document.querySelectorAll('#promotionList input[type="checkbox"]:checked');
+            const selectedIds = Array.from(checkedBoxes).map(checkbox => 
+                checkbox.id.replace('promote_', '')
+            );
+
+            if (selectedIds.length === 0) {
+                showNotification('Pilih minimal satu santri untuk naik kelas', 'error');
+                return;
+            }
+
+            let promotedCount = 0;
+            const today = new Date().toISOString().split('T')[0];
+            const updates = [];
+
+            selectedIds.forEach(santriId => {
+                const index = santriData.findIndex(s => s.id_santri === santriId);
+                if (index !== -1) {
+                    const updatedData = { ...santriData[index] };
+                    
+                    if (kelasTujuan === 'Alumni') {
+                        updatedData.status_santri = 'Alumni';
+                        updatedData.tgl_keluar = today;
+                        // Keep original class for alumni
+                    } else {
+                        updatedData.kelas = kelasTujuan;
+                    }
+                    
+                    santriData[index] = updatedData;
+                    updates.push(updatedData);
+                    promotedCount++;
+                }
+            });
+
+            // Try to update Google Sheets if connected
+            if (isGoogleSheetsConnected && updates.length > 0) {
+                const success = await bulkUpdateGoogleSheets(updates);
+                if (!success) {
+                    showNotification('Data lokal diperbarui, tetapi gagal sinkronisasi ke Google Sheets', 'warning');
+                }
+            }
+
+            // Update display
+            loadSantriData();
+            updateStats();
+            filterData(); // Refresh current filter
+            closePromoteModal();
+
+            if (kelasTujuan === 'Alumni') {
+                showNotification(`${promotedCount} santri berhasil lulus dan menjadi alumni`, 'success');
+            } else {
+                showNotification(`${promotedCount} santri berhasil naik ke kelas ${kelasTujuan}`, 'success');
+            }
+        }
+
+        function showContextMenu(event, id) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            selectedRowId = id;
+            
+            const contextMenu = document.getElementById('contextMenu');
+            contextMenu.style.left = event.pageX + 'px';
+            contextMenu.style.top = event.pageY + 'px';
+            contextMenu.classList.remove('hidden');
+        }
+
+        function viewDetails() {
+            if (selectedRowId) {
+                showSantriDetail(selectedRowId);
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+        }
+
+        function editFromContext() {
+            if (selectedRowId) {
+                editSantri(selectedRowId);
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+        }
+
+        function deleteFromContext() {
+            if (selectedRowId) {
+                deleteSantri(selectedRowId);
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'warning' ? 'bg-yellow-500' : 
+                           type === 'info' ? 'bg-blue-500' : 'bg-red-500';
+            
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 transform translate-x-full ${bgColor}`;
+            
+            const iconClass = type === 'success' ? 'fa-check-circle' : 
+                            type === 'warning' ? 'fa-exclamation-triangle' : 
+                            type === 'info' ? 'fa-info-circle' : 'fa-exclamation-circle';
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${iconClass} mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'974c511b4738f881',t:'MTc1NjEzNzc4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
