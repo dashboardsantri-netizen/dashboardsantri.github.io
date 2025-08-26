@@ -555,82 +555,83 @@
         </div>
     </div>
 
-    <script>
-        // Google Apps Script Configuration
-        const GAPPS_CONFIG = {
-            // Ganti dengan URL Google Apps Script Web App Anda
-            WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzEbuC9a70TwoQ5WeyhtEx0Q5oMKcYDZffLm9Z5MSyHei7urjn0O3c4CBpa-osT4AjA/exec',
-            
-            // Nama sheet di Google Spreadsheet
-            SHEET_NAME: 'DataSantri',
-            
-            // Timeout untuk request (dalam milidetik)
-            TIMEOUT: 30000
-        };
-    
-        // Global variables
-        let santriData = [];
-        let isLoading = false;
-        let currentEditId = null;
-        let deleteId = null;
-        let currentDetailId = null;
-        let selectedRowId = null;
-        let isGoogleSheetsConnected = false;
-    
-        // Google Apps Script API Functions
-        async function callGoogleAppsScript(action, data = {}) {
-            // Cek apakah URL sudah dikonfigurasi. Pastikan nilai URL tidak kosong atau placeholder.
-            if (!GAPPS_CONFIG.WEB_APP_URL || GAPPS_CONFIG.WEB_APP_URL.includes('AKfy')) {
-                 console.warn('Google Apps Script URL belum dikonfigurasi. Menggunakan data lokal.');
-                 updateConnectionStatus(false, 'URL belum dikonfigurasi');
-                 return null;
-            }
-    
-            try {
-                showLoadingIndicator(true);
-                
-                const payload = {
-                    action: action,
-                    sheetName: GAPPS_CONFIG.SHEET_NAME,
-                    data: data
-                };
-    
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), GAPPS_CONFIG.TIMEOUT);
-    
-                const response = await fetch(GAPPS_CONFIG.WEB_APP_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload),
-                    mode: 'cors',
-                    signal: controller.signal
-                });
-    
-                clearTimeout(timeoutId);
-    
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-    
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-    
-                updateConnectionStatus(true, 'Terhubung');
-                return result;
-            } catch (error) {
-                console.error('Error calling Google Apps Script:', error);
-                updateConnectionStatus(false, error.name === 'AbortError' ? 'Timeout' : 'Error koneksi');
-                showNotification(`Error: ${error.message}`, 'error');
-                return null;
-            } finally {
-                showLoadingIndicator(false);
-            }
+<script>
+    // Google Apps Script Configuration
+    const GAPPS_CONFIG = {
+        // Ganti dengan URL Google Apps Script Web App Anda
+        // PASTIKAN URL INI ADALAH URL DARI DEPLOYMENT ANDA SENDIRI
+        WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbzEbuC9a70TwoQ5WeyhtEx0Q5oMKcYDZffLm9Z5MSyHei7urjn0O3c4CBpa-osT4AjA/exec',
+        
+        // Nama sheet di Google Spreadsheet
+        SHEET_NAME: 'DataSantri',
+        
+        // Timeout untuk request (dalam milidetik)
+        TIMEOUT: 30000
+    };
+
+    // Global variables
+    let santriData = [];
+    let isLoading = false;
+    let currentEditId = null;
+    let deleteId = null;
+    let currentDetailId = null;
+    let selectedRowId = null;
+    let isGoogleSheetsConnected = false;
+
+    // Google Apps Script API Functions
+    async function callGoogleAppsScript(action, data = {}) {
+        // Solusi: Hanya periksa apakah URL tidak kosong
+        if (!GAPPS_CONFIG.WEB_APP_URL) {
+            console.warn('Google Apps Script URL belum dikonfigurasi. Menggunakan data lokal.');
+            updateConnectionStatus(false, 'URL belum dikonfigurasi');
+            return null;
         }
+
+        try {
+            showLoadingIndicator(true);
+            
+            const payload = {
+                action: action,
+                sheetName: GAPPS_CONFIG.SHEET_NAME,
+                data: data
+            };
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), GAPPS_CONFIG.TIMEOUT);
+
+            const response = await fetch(GAPPS_CONFIG.WEB_APP_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+                mode: 'cors',
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            updateConnectionStatus(true, 'Terhubung');
+            return result;
+        } catch (error) {
+            console.error('Error calling Google Apps Script:', error);
+            updateConnectionStatus(false, error.name === 'AbortError' ? 'Timeout' : 'Error koneksi');
+            showNotification(`Error: ${error.message}`, 'error');
+            return null;
+        } finally {
+            showLoadingIndicator(false);
+        }
+    }
     
 
         // Update connection status indicator
@@ -1633,4 +1634,5 @@
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'974c511b4738f881',t:'MTc1NjEzNzc4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
